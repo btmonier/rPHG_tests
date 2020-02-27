@@ -40,6 +40,4 @@ rsconnect/
 *.swp
 *.swo
 
-## R projects
-*.Rproj
 
