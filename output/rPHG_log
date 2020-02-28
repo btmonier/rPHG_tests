@@ -1,0 +1,27 @@
+[main] INFO net.maizegenetics.pangenome.db_loading.DBLoadingUtils - first connection: dbName from config file = /home/bm646/Projects/rphg_tests/data/phgSmallSeq.db host: localHost user: sqlite type: sqlite
+[main] INFO net.maizegenetics.pangenome.db_loading.DBLoadingUtils - Database URL: jdbc:sqlite:/home/bm646/Projects/rphg_tests/data/phgSmallSeq.db
+[main] INFO net.maizegenetics.pangenome.db_loading.DBLoadingUtils - Connected to database:  
+
+[main] INFO net.maizegenetics.pangenome.api.CreateGraphUtils - referenceRangesAsMap: query statement: select reference_ranges.ref_range_id, chrom, range_start, range_end, methods.name from reference_ranges  INNER JOIN ref_range_ref_range_method on ref_range_ref_range_method.ref_range_id=reference_ranges.ref_range_id  INNER JOIN methods on ref_range_ref_range_method.method_id = methods.method_id  AND methods.method_type = 7 ORDER BY reference_ranges.ref_range_id
+methods size: 1
+[main] INFO net.maizegenetics.pangenome.api.CreateGraphUtils - referenceRangesAsMap: number of reference ranges: 20
+[main] INFO net.maizegenetics.pangenome.api.CreateGraphUtils - referenceRangesAsMap: time: 8.18537E-4 secs.
+[main] INFO net.maizegenetics.pangenome.api.CreateGraphUtils - taxaListMap: query statement: SELECT gamete_haplotypes.gamete_grp_id, genotypes.line_name FROM gamete_haplotypes INNER JOIN gametes ON gamete_haplotypes.gameteid = gametes.gameteid INNER JOIN genotypes on gametes.genoid = genotypes.genoid ORDER BY gamete_haplotypes.gamete_grp_id;
+[main] INFO net.maizegenetics.pangenome.api.CreateGraphUtils - taxaListMap: number of taxa lists: 11
+[main] INFO net.maizegenetics.pangenome.api.CreateGraphUtils - taxaListMap: time: 3.17306E-4 secs.
+[main] INFO net.maizegenetics.pangenome.api.CreateGraphUtils - createHaplotypeNodes: haplotype method: CONSENSUS range group method: null
+[main] INFO net.maizegenetics.pangenome.api.CreateGraphUtils - createHaplotypeNodes: query statement: SELECT haplotypes_id, gamete_grp_id, haplotypes.ref_range_id, seq_hash, seq_len FROM haplotypes WHERE method_id = 6;
+[main] INFO net.maizegenetics.pangenome.api.CreateGraphUtils - addNodes: number of nodes: 30
+[main] INFO net.maizegenetics.pangenome.api.CreateGraphUtils - addNodes: number of reference ranges: 10
+[main] INFO net.maizegenetics.pangenome.api.CreateGraphUtils - createHaplotypeNodes: time: 6.63368E-4 secs.
+[main] INFO net.maizegenetics.pangenome.api.HaplotypeGraph - Created graph edges: created when requested  number of nodes: 30  number of reference ranges: 10
+columnIndex = 0
+columnIndex = 1
+columnIndex = 2
+columnIndex = 3
+columnIndex = 4
+columnIndex = 5
+columnIndex = 6
+columnIndex = 7
+columnIndex = 8
+columnIndex = 9
