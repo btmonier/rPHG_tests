@@ -38,7 +38,7 @@ seqnames <- rep(paste0("1", LETTERS[1:3]), rrSamples / 3)
 seqnames <- seqnames[order(seqnames)]
 
 w <- sample(250:1500, rrSamples, TRUE)
-start <- seq(1, 5e6, by = 3000)[1:300]
+start <- seq(1, 5e6, by = 3000)[seq_len(rrSamples)]
 end <- start + w
 
 
@@ -60,24 +60,56 @@ rm(w, start, end, seqnames, rrSamples)
 ## User interface ----
 ui <- fluidPage(
     ## Title
-    shiny::h4("HaploViewer v0.0.1"),
+    shiny::h4("HaploViewer v0.0.3"),
 
-    shiny::mainPanel(
-        ## Drop down for chromosomes
-        # selectInput(
-        #     inputId = "chrom_select",
-        #     label = "Select Chromosome",
-        #     choices = NULL
-        # ),
-        selectInput(
-            "chrom_select",
-            "Select Chromosome",
-            choices = levels(testHaplo$seqnames),
+    ## Interactive plot declaration
+    div(plotly::plotlyOutput("hapPlot"), align = "center"),
+
+    ## Drop down for chromosomes
+    shiny::column(
+        width = 3,
+        shiny::selectInput(
+            inputId  = "chrom_select",
+            label    = "Select Chromosome",
+            choices  = levels(testHaplo$seqnames),
             selected = levels(testHaplo$seqnames)[1]
-        ),
-
-        ## Interactive plot declaration
-        div(plotly::plotlyOutput("hapPlot", height = "50%"), align = "center")
+        )
+    ),
+    shiny::column(
+        width = 1,
+        style = "margin-top: 25px; margin-right: 0px",
+        shiny::actionButton(
+            inputId = "zoom_in",
+            label = "",
+            icon = icon("search-plus")
+        )
+    ),
+    shiny::column(
+        width = 1,
+        style = "margin-top: 25px; margin-left: 0px",
+        shiny::actionButton(
+            inputId = "zoom_out",
+            label = "",
+            icon = icon("search-minus")
+        )
+    ),
+    shiny::column(
+        width = 1,
+        style = "margin-top: 25px; margin-right: 0px",
+        shiny::actionButton(
+            inputId = "mov_left",
+            label = "",
+            icon = icon("arrow-left")
+        )
+    ),
+    shiny::column(
+        width = 1,
+        style = "margin-top: 25px; margin-left: 0px",
+        shiny::actionButton(
+            inputId = "mov_right",
+            label = "",
+            icon = icon("arrow-right")
+        )
     )
 )
 
@@ -89,6 +121,29 @@ server <- function(input, output, session) {
     choices_chrom <- reactive({
         as.vector(levels(testHaplo$seqnames))
     })
+
+
+    ## Zoom in
+    counter <- reactiveValues(countervalue = 1)
+    observeEvent(input$zoom_in, {
+        counter$countervalue <- counter$countervalue - 0.1     # if the add button is clicked, increment the value by 1 and update it
+    })
+    observeEvent(input$zoom_out, {
+        counter$countervalue <- counter$countervalue + 0.1  # if the sub button is clicked, decrement the value by 1 and update it
+    })
+
+
+    ## Nav left and right
+    counter_mov <- reactiveValues(countervalue = 0)
+    observeEvent(input$mov_left, {
+        counter$countervalue <- counter$countervalue - 3e3     # if the add button is clicked, increment the value by 1 and update it
+    })
+    observeEvent(input$mov_right, {
+        counter$countervalue <- counter$countervalue + 3e3  # if the sub button is clicked, decrement the value by 1 and update it
+    })
+
+
+
 
     ## Haploplot
     output$hapPlot <- plotly::renderPlotly({
@@ -109,79 +164,72 @@ server <- function(input, output, session) {
         xend <- max(tmp$end)
         yend <- max(tmp$numHaplotypes)
 
-        p <- ggplot(tmp) +
-            geom_rect(
-                mapping = aes(
-                    xmin = start,
-                    xmax = end,
-                    ymin = 0,
-                    ymax = max(tmp$numHaplotypes),
-                    text = paste0(
-                        "<b>Ref Range ID: </b>", refRange_id, "\n",
-                        "<b>Start: </b>", start, "\n",
-                        "<b>Stop: </b>", end
+
+        # plotly test ----
+        fig <- plot_ly(tmp, x = ~med)
+        fig <- fig %>%
+            add_trace(
+                y = ~numHaplotypes,
+                name = "Number of haplotypes",
+                type = "scatter",
+                mode = "lines+markers",
+                text = paste0(
+                    "<b>No. Haplotypes: </b>", tmp$numHaplotypes, "\n",
+                    "<b>Ref Range ID: </b>", tmp$refRange_id, "\n",
+                    "<b>Start: </b>", tmp$start, "\n",
+                    "<b>Stop: </b>", tmp$end
+                ),
+                hoverinfo = "text"
+            )
+
+        # plotly doesn't know vectorization?
+        shape_ls <- list()
+        for (i in seq_len(nrow(tmp))) {
+            shape_ls[[i]] <- list(
+                type = "rect",
+                line = list(color = tmp$color[i]),
+                fillcolor = tmp$color[i],
+                x0 = tmp$start[i],
+                x1 = tmp$end[i],
+                y0 = 0,
+                y1 = max(tmp$numHaplotypes),
+                opacity = 0.4
+            )
+        }
+
+        fig <- fig %>%
+            layout(
+                shapes = shape_ls,
+                xaxis = list(
+                    title = "Physical position (bp)",
+                    rangeselector = list(
+                        buttons = list(
+                            count = 1000,
+                            label = "TEST"
+                        )
+                    ),
+                    rangeselector = list(
+                        buttons = list(
+                            list(
+                                count = 3,
+                                label = "3 mo",
+                                step = "month",
+                                stepmode = "backward"
+                            )
+                        )
                     )
                 ),
-                fill = tmp$color,
-                alpha = 0.5
-            ) +
-            geom_point(
-                mapping = aes(
-                    med,
-                    numHaplotypes,
-                    text = paste0("<b>No. Haplotypes: </b>", numHaplotypes)
+                yaxis = list(
+                    title = "Number of haplotypes"
                 )
-            ) +
-            geom_path(aes(med, numHaplotypes)) +
-            xlab("Physical Position (bp)") +
-            ylab("Number of Haplotypes")
+            ) %>%
+            rangeslider(
+                start = (0 + counter_mov$countervalue) * counter$countervalue,
+                end = (1e5 + counter_mov$countervalue) * counter$countervalue
+            ) %>%
+            config(displayModeBar = FALSE)
+        fig
 
-        ## GG Plotly
-        m <- list(
-            l = 100,
-            r = 10,
-            b = 50,
-            t = 50,
-            pad = 2
-        )
-        ggplotly(p, tooltip = "text") %>%
-            config(displayModeBar = FALSE) %>%
-            layout(
-                autosize = F,
-                xaxis = list(
-                    # rangeselector = list(
-                    #     buttons = list(
-                    #         list(
-                    #             count = 3,
-                    #             label = "3 mo",
-                    #             step = "month",
-                    #             stepmode = "backward"
-                    #         ),
-                    #         list(
-                    #             count = 6,
-                    #             label = "6 mo",
-                    #             step = "month",
-                    #             stepmode = "backward"
-                    #         ),
-                    #         list(
-                    #             count = 1,
-                    #             label = "1 yr",
-                    #             step = "year",
-                    #             stepmode = "backward"
-                    #         ),
-                    #         list(
-                    #             count = 1,
-                    #             label = "YTD",
-                    #             step = "year",
-                    #             stepmode = "todate"),
-                    #         list(step = "all")
-                    #     )
-                    # ),
-                    width = 10000,
-                    rangeslider = list(),
-                    margin = m
-                )
-            )
     })
 
 }
@@ -191,3 +239,69 @@ server <- function(input, output, session) {
 shinyApp(ui = ui, server = server)
 
 
+
+
+
+# === DEBUG =========================================================
+        # p <- ggplot(tmp) +
+        #     geom_rect(
+        #         mapping = aes(
+        #             xmin = start,
+        #             xmax = end,
+        #             ymin = 0,
+        #             ymax = max(tmp$numHaplotypes)
+        #         ),
+        #         fill = tmp$color,
+        #         alpha = 0.5
+        #     ) +
+        #     geom_point(
+        #         mapping = aes(
+        #             med,
+        #             numHaplotypes,
+        #             text = paste0(
+        #                 "<b>No. Haplotypes: </b>", numHaplotypes, "\n",
+        #                 "<b>Ref Range ID: </b>", refRange_id, "\n",
+        #                 "<b>Start: </b>", start, "\n",
+        #                 "<b>Stop: </b>", end
+        #             )
+        #         )
+        #     ) +
+        #     geom_path(aes(med, numHaplotypes)) +
+        #     xlab("Physical Position (bp)") +
+        #     ylab("Number of Haplotypes")
+        #
+        # ## GG Plotly
+        # m <- list(
+        #     l = 100,
+        #     r = 10,
+        #     b = 50,
+        #     t = 50,
+        #     pad = 2
+        # )
+        # ggplotly(p, tooltip = "text") %>%
+        #     config(displayModeBar = FALSE) %>%
+        #     layout(
+        #         autosize = FALSE,
+        #         xaxis = list(
+        #             rangeselector = list(
+        #                 buttons = list(
+        #                     # list(
+        #                     #     count = 3,
+        #                     #     label = "3 mo",
+        #                     #     step = "month",
+        #                     #     stepmode = "backward"
+        #                     # ),
+        #                     list(
+        #                         count = 1000,
+        #                         label = "YTD",
+        #                         # step = "linear",
+        #                         stepmode = "backward"
+        #                     )
+        #                 )
+        #             ),
+        #             # width = 10000,
+        #             # rangeslider = list(start = 0, end = 100),
+        #             margin = m
+        #         )
+        #     ) %>%
+        #     rangeslider(start = 0, end = 1e5)
