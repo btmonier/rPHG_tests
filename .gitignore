@@ -41,3 +41,8 @@ rsconnect/
 *.swo
 
 
+.Rproj.user
+
+
+## rPHG unique
+data/*.txt
