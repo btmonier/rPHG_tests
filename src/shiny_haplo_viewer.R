@@ -30,15 +30,17 @@ library(shiny)
 # === Toy data generation ===========================================
 
 ## Parameters ----
-rrSamples <- 300
+rrSamples <- 9e3
 
 
 ## Random generation of samples (reference ranges) ----
 seqnames <- rep(paste0("1", LETTERS[1:3]), rrSamples / 3)
 seqnames <- seqnames[order(seqnames)]
 
-w <- sample(250:1500, rrSamples, TRUE)
-start <- seq(1, 5e6, by = 3000)[seq_len(rrSamples)]
+w <- sample(2500:15000, rrSamples, TRUE)
+start <- seq(1, 500e7, by = 3000)
+start <- sample(start, size = rrSamples, replace = FALSE)
+start <- start[order(start)]
 end <- start + w
 
 
@@ -46,10 +48,10 @@ end <- start + w
 testHaplo <- S4Vectors::DataFrame(
     refRange_id   = factor(paste0("R", seq_len(rrSamples))),
     seqnames      = factor(seqnames),
-    start         = as.integer(start),
-    end           = as.integer(end),
-    width         = as.integer((end - start) + 1),
-    numHaplotypes = as.integer(sample(1:10, size = rrSamples, replace = TRUE))
+    start         = start,
+    end           = end,
+    width         = (end - start) + 1,
+    numHaplotypes = sample(1:10, size = rrSamples, replace = TRUE)
 )
 rm(w, start, end, seqnames, rrSamples)
 
@@ -227,7 +229,8 @@ server <- function(input, output, session) {
                 start = (0 + counter_mov$countervalue) * counter$countervalue,
                 end = (1e5 + counter_mov$countervalue) * counter$countervalue
             ) %>%
-            config(displayModeBar = FALSE)
+            config(displayModeBar = FALSE) %>%
+            toWebGL()
         fig
 
     })
