@@ -30,7 +30,7 @@ library(shiny)
 # === Toy data generation ===========================================
 
 ## Parameters ----
-rrSamples <- 9e3
+rrSamples <- 10e4
 
 
 ## Random generation of samples (reference ranges) ----
@@ -174,7 +174,7 @@ server <- function(input, output, session) {
                 y = ~numHaplotypes,
                 name = "Number of haplotypes",
                 type = "scatter",
-                mode = "lines+markers",
+                mode = "markers",
                 text = paste0(
                     "<b>No. Haplotypes: </b>", tmp$numHaplotypes, "\n",
                     "<b>Ref Range ID: </b>", tmp$refRange_id, "\n",
