@@ -31,7 +31,7 @@ rPHG:::configFileMaker(
 
 
 ## Get config file name
-configFilePath <- paste0("data/configFilePHG.txt")
+configFilePath <- paste0(getwd(), "/", "data/configFilePHG.txt")
 
 
 ## Various graph building methods ----
@@ -94,6 +94,84 @@ rmDF <- rPHG::readMappingsForLineName(
 phgObject %>%
     rPHG::numHaploPerRange(start = 4e3, end = 5e4) %>%
     rPHG::plotNumHaplo()
+
+
+
+# === Debug - 2020-03-03 ============================================
+
+## Read mappings for line name (with fileGroup parameter) ----
+
+### Parameters
+configFilePath <- configFilePath # From above
+readMethod     <- "HAP_COUNT_METHOD"
+hapMethod      <- "CONSENSUS"
+lineName       <- "LineA1_wgs"
+fileGroup      <- "wgsFlowcell_wgs"
+
+### Get object
+jRC <- rJava::J(
+    "net.maizegenetics.pangenome.api/RMethods", # Methods file
+    "readMappingsForLineName",                  # Method name
+    configFilePath,                             # Config file path (string)
+    lineName,                                   # Line name to be retrieved
+    readMethod,                                 # Read mapping method from DB
+    hapMethod,                                  # Haplotype method
+    fileGroup                                   # File group name for line in DB
+)
+
+### Configure for R
+colNum <- jRC$dataVectors$size()
+rmLNDF <- lapply(seq_len(colNum), function(i) {
+    jRC$dataVectors$get(as.integer(i - 1))
+})
+rmLNDF <- data.frame(rmLNDF)
+colnames(rmLNDF) <- jRC$columnNames
+rmLNDF <- S4Vectors::DataFrame(rmLNDF)
+
+
+## Extract read mapping information ----
+
+### Parameters
+configFilePath <- configFilePath # From above
+
+### Get object
+jRC <- rJava::J(
+    "net.maizegenetics.pangenome.api/RMethods", # Methods file
+    "readMappingTableInfo",
+    configFilePath
+)
+
+### Configure for R
+colNum <- jRC$dataVectors$size()
+rmTIDF <- lapply(seq_len(colNum), function(i) {
+    jRC$dataVectors$get(as.integer(i - 1))
+})
+rmTIDF <- data.frame(rmTIDF)
+colnames(rmTIDF) <- jRC$columnNames
+rmTIDF <- S4Vectors::DataFrame(rmTIDF)
+rmTIDF
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
