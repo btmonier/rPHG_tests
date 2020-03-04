@@ -174,7 +174,7 @@ server <- function(input, output, session) {
                 y = ~numHaplotypes,
                 name = "Number of haplotypes",
                 type = "scatter",
-                mode = "markers",
+                mode = "lines+markers",
                 text = paste0(
                     "<b>No. Haplotypes: </b>", tmp$numHaplotypes, "\n",
                     "<b>Ref Range ID: </b>", tmp$refRange_id, "\n",
@@ -229,8 +229,7 @@ server <- function(input, output, session) {
                 start = (0 + counter_mov$countervalue) * counter$countervalue,
                 end = (1e5 + counter_mov$countervalue) * counter$countervalue
             ) %>%
-            config(displayModeBar = FALSE) %>%
-            toWebGL()
+            config(displayModeBar = FALSE)
         fig
 
     })
